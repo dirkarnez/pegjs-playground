@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://pegjs.org/vendor/pegjs/peg.js"></script>
+</head>
+
+<body>
+  <script>
+    const parserCode = `
+// Simple Arithmetics Grammar
+// ==========================
+//
+// Accepts expressions like "2 * (3 + 4)" and computes their value.
+
+Expression
+  = head:Term tail:(_ ("+" / "-") _ Term)* {
+      return tail.reduce(function(result, element) {
+        if (element[1] === "+") { 
+          //return result + element[3]; 
+              return Number(parseFloat(result + element[3]).toPrecision(10));
+        } else if (element[1] === "-") { 
+          //return result - element[3]; 
+            return Number(parseFloat(result - element[3]).toPrecision(10));
+        }
+      }, head);
+    }
+
+Term
+  = head:Factor tail:(_ ("*" / "/") _ Factor)* {
+      return tail.reduce(function(result, element) {
+        if (element[1] === "*") { 
+          //return result * element[3];
+            return Number(parseFloat(result * element[3]).toPrecision(10));
+        } else if (element[1] === "/") { 
+          // return result / element[3]; 
+          return Number(parseFloat(result / element[3]).toPrecision(10));
+        }
+      }, head);
+    }
+
+//
+Factor
+  = "(" _ expr:Expression _ ")" { return expr; }
+  / Integer
+
+Integer "integer"
+  = _ [0-9.]+ { return parseFloat(text(), 10); }
+
+_ "whitespace"
+  = [ \\t\\n\\r]*
+`;
+
+    const parserSource = window.peg.generate(parserCode, {
+      cache: false,
+      optimize: "speed",
+      output: "source"
+    });
+
+    const parser = eval(parserSource);
+
+    const test = (expression, expected) => {
+      const result = parser.parse(expression);
+      console.log(`${expression} gets ${result}\n\tpassed = ${result == expected}\n\tpurejs gets ${eval(expression)}`);
+    }
+
+    test("0.1 + 0.1", "0.2");
+    test("0.1 / 0.3", "0.3333333333"); // 10 digits designed at this moment
+    test("0.1 + 0.2", "0.3000000000"); // 10 digits designed at this moment
+
+  </script>
+</body>
+</html>
